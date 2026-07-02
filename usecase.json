@@ -1,0 +1,94 @@
+[
+  {"box_2d": [0, 439, 45, 560], "label": "Login"},
+  {"box_2d": [917, 434, 989, 565], "label": "Logout"},
+
+  {"box_2d": [435, 12, 608, 29], "label": "CASHIER"},
+  {"box_2d": [757, 966, 963, 986], "label": "OWNER"},
+  {"box_2d": [435, 966, 608, 983], "label": "PEGAWAI"},
+
+  {"box_2d": [66, 439, 137, 561], "label": "Portal Toko Utama"},
+  {"box_2d": [140, 442, 211, 558], "label": "Admin Dashboard"},
+
+  {"box_2d": [210, 110, 271, 194], "label": "Modul Transaksi Kasir"},
+  {"box_2d": [210, 269, 271, 353], "label": "Kelola Shift Kasir"},
+  {"box_2d": [337, 269, 397, 353], "label": "Buka Shift"},
+  {"box_2d": [337, 401, 397, 484], "label": "Tutup Shift"},
+
+  {"box_2d": [431, 110, 492, 194], "label": "Proses Transaksi"},
+  {"box_2d": [431, 269, 492, 353], "label": "Proses Pembayaran"},
+  {"box_2d": [337, 110, 397, 194], "label": "Lihat Riwayat Transaksi"},
+
+  {"box_2d": [210, 686, 271, 769], "label": "Sistem Laporan"},
+  {"box_2d": [337, 532, 397, 615], "label": "Hasilkan Laporan Penjualan"},
+  {"box_2d": [337, 686, 397, 769], "label": "Hasilkan Laporan Keuangan"},
+  {"box_2d": [337, 840, 397, 923], "label": "Hasilkan Laporan Inventori"},
+
+  {"box_2d": [172, 686, 233, 769], "label": "Manajemen Data Master"},
+  {"box_2d": [247, 532, 307, 615], "label": "Kelola Kategori Produk"},
+  {"box_2d": [247, 686, 307, 769], "label": "Kelola Satuan / Merk"},
+  {"box_2d": [247, 840, 307, 923], "label": "Kelola Pemasok"},
+  {"box_2d": [308, 686, 368, 769], "label": "Tambah Produk Baru"},
+  {"box_2d": [379, 686, 439, 769], "label": "Perbarui Data Produk"},
+
+  {"box_2d": [108, 126, 179, 210], "label": "Modul Staf Toko (Umum)"},
+  {"box_2d": [210, 840, 271, 923], "label": "Kelola Reservasi"},
+  {"box_2d": [318, 929, 378, 1000], "label": "Kelola Pengembalian Sewa"},
+  {"box_2d": [429, 929, 489, 1000], "label": "Kelola Barang Titipan"},
+  {"box_2d": [539, 929, 599, 1000], "label": "Kelola Alur Proses Sewa (Kanban)"},
+  {"box_2d": [210, 929, 271, 1000], "label": "Tambah Produk Sewa"},
+
+  {"box_2d": [46, 532, 116, 615], "label": "Modul Utilitas Sistem"},
+  {"box_2d": [149, 532, 209, 615], "label": "Cari Produk / Data"},
+  {"box_2d": [247, 401, 307, 484], "label": "Kelola Diskon / Promo"},
+  {"box_2d": [108, 401, 179, 484], "label": "Manajemen Pengguna"},
+
+  {"box_2d": [210, 532, 271, 615], "label": "Pencadangan Data (Backup)"},
+  {"box_2d": [318, 532, 378, 615], "label": "Restorasi Data"},
+  {"box_2d": [429, 532, 489, 615], "label": "Manajemen Konfigurasi Sistem"},
+
+  {"box_2d": [539, 840, 599, 923], "label": "label": "Data Pendukung Laporan"},
+  {"box_2d": [611, 840, 671, 923], "label": "label": "Hitung Total Laba"},
+  {"box_2d": [682, 840, 742, 923], "label": "label": "Data Laporan per Periode"},
+  {"box_2d": [753, 840, 813, 923], "label": "label": "Data Penyusutan Produk"},
+
+  {"box_2d": [611, 686, 671, 769], "label": "label": "Hasilkan Laporan Denda"},
+  {"box_2d": [539, 686, 599, 769], "label": "label": "Data Denda"},
+  {"box_2d": [682, 686, 742, 769], "label": "label": "Data Kerusakan"},
+
+  {"box_2d": [803, 110, 863, 194], "label": "label": "Pencarian per Lokasi"},
+  {"box_2d": [803, 269, 863, 353], "label": "label": "Pencarian per QR/Barcode"},
+
+  {"box_2d": [0, 486, 66, 513], "label": "label": "Actor: CASHIER"},
+  {"box_2d": [0, 439, 29, 461], "label": "label": "Actor: OWNER (ADMIN)"},
+  {"box_2d": [0, 486, 513, 1000], "label": "label": "Actor: PEGAWAI (UMUM)"}
+]
+```http://googleusercontent.com/image_generation_content/338
+
+Here is the analysis of the original diagram and the resulting improved Use Case Diagram.
+
+**1. Analysis of the Original Diagram and Enhancements:**
+
+The original Use Case Diagram provides a solid foundation, defining core roles and functions for a store system. My analysis identified several key areas to improve clarity, functionality, and proper UML notation. Here is a summary of the significant changes made in the new version:
+
+*   **Duplication and Redundancy:** The original had a duplicate use case "Kelola Produk baru Toko" connected through different report flows. This has been resolved into single, consolidated functional actions that feed data to a proper reporting structure.
+*   **Logical Refinement of Flows:** Relationships were cleaned up to represent proper system interactions. Data *derivation* was replaced with action-based includes/extends.
+*   **UML Notation Correction (<<include>> vs. <<extend>>):** The use of these stereotypes was corrected. `<<include>>` is now used for nested, mandatory steps (e.g., specific data needed for a report). `<<extend>>` is used for conditional or optional steps (e.g., *if* a product is missing, then an extension allows adding it).
+*   **Role Specialization:** A generic role "Pegawai (Staf Toko Umum)" was added to the left to capture all generic staff duties, from which "Cashier" is specialized. This separates basic operational tasks from role-specific workflows.
+*   **Admin Dashboard Expansions:** Explicit administration functions, like **Manajemen Pengguna** (User Management), **Manajemen Diskon/Promo**, and system utilities, were added to create a complete Admin-Dashboard module.
+*   **Standardized Report Flow:** Instead of fragmented lines connecting to "Laporan," a robust **Sistem Laporan** module was created. For example, 'Membuat Laporan Penjualan' now includes nested requirements like 'Hitung Total Laba' and 'Data Laporan per Periode'.
+
+**2. Placement of Login and Logout:**
+
+*   **Login** is now correctly placed at the absolute top center, acting as a precondition for all actor roles.
+*   **Logout** is correctly placed at the absolute bottom center, acting as the final action for all actor roles.
+
+**3. Use of <<extend>> and <<include>>:**
+
+*   **<<include>>** (Dashed arrow, open arrowhead): Used to connect mandatory steps. Example: "Proses Transaksi" <<include>> "Kelola Shift Kasir".
+*   **<<extend>>** (Dashed arrow, closed arrowhead): Used for conditional additions. Example: "Menambahkan Stock Barang" <<extend>> "Perbarui Data Produk" *if* the product being stocked is new or missing.
+
+**The Refined Image:**
+
+This new diagram provides a comprehensive, logically structured, and professionally presented Use Case solution for your system.
+
+**[IMAGE_1]**

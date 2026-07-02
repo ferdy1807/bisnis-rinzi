@@ -1,0 +1,14 @@
+/* packages/frontend/styles/theme.scss */
+
+@layer components {
+
+    /* Contoh tombol kustom jika sewaktu-waktu tidak menggunakan PrimeVue Button */
+    .btn-custom {
+        @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors;
+    }
+
+    /* Layout dasar untuk halaman dashboard */
+    .layout-wrapper {
+        @apply min-h-screen flex flex-col bg-gray-50;
+    }
+}

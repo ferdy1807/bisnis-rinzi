@@ -1,0 +1,84 @@
+/* packages/frontend/styles/main.scss */
+
+/* ==========================================================================
+   1. CORE TAILWIND v4 INITIALIZATION
+   ========================================================================== */
+@import "tailwindcss";
+
+/* ==========================================================================
+   2. CSS CASCADE LAYERS DEFINITION
+   Mencegah konflik style antara utility class Tailwind dan rancangan PrimeVue.
+   Urutan: Base Tailwind -> Komponen PrimeVue -> Utility Overrides Tailwind.
+   ========================================================================== */
+@layer tailwind-base, primevue, tailwind-utilities;
+
+/* ==========================================================================
+   3. DESIGN TOKENS & BRANDING VARIABLE SYSTEM (Bisnis Rinzi Theme)
+   Menggunakan preset warna terpusat yang disinkronkan dengan PrimeVue Aura.
+   ========================================================================== */
+:root {
+    /* Palet Warna Utama (Primary Corporate Blue - Proyek Skripsi) */
+    --p-primary-50: #eff6ff;
+    --p-primary-100: #dbeafe;
+    --p-primary-200: #bfdbfe;
+    --p-primary-300: #93c5fd;
+    --p-primary-400: #60a5fa;
+    --p-primary-500: #3b82f6;
+    /* Base Brand Color */
+    --p-primary-600: #2563eb;
+    --p-primary-700: #1d4ed8;
+    --p-primary-800: #1e40af;
+    --p-primary-900: #1e3a8a;
+    --p-primary-950: #172554;
+
+    /* Border Radius & Toko Global */
+    --p-content-border-radius: 8px;
+}
+
+/* ==========================================================================
+   4. GLOBAL HTML & BODY RESET
+   ========================================================================== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    @apply bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-300;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Penanganan Mode Gelap Global */
+.dark body {
+    @apply bg-slate-900 text-slate-100;
+}
+
+/* ==========================================================================
+   5. COMPONENT ELEMENT OVERRIDES (Global Usability)
+   ========================================================================== */
+/* Kustomisasi scrollbar agar antarmuka dashboard lebih bersih */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600;
+}
+
+/* Efek seleksi teks transaksional */
+::selection {
+    @apply bg-blue-500/20 text-blue-900 dark:text-blue-100;
+}

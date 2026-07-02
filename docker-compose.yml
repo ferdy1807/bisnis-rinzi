@@ -1,0 +1,133 @@
+services:
+  # =====================================================================================
+  # CONTAINER 1: POSTGRESQL (Mengelola 6 Logical Database dalam 1 Layanan)
+  # =====================================================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: bisnis-rinzi-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      # Pemetaan path data sesuai dengan struktur mkdir -p di scaffold-backend.txt
+      - ./deployments/postgres/data:/var/lib/postgresql/data
+      # Otomatisasi pembuatan database terisolasi saat kontainer pertama kali dijalankan
+      - ./deployments/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - rinzi-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================================================
+  # CONTAINER 2: REDIS (Manajemen Sesi Cepat & Sinkronisasi Lock PWA)
+  # =====================================================================================
+  redis:
+    image: redis:8.6-alpine
+    container_name: bisnis-rinzi-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispass}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      # Pemetaan path data sesuai dengan struktur mkdir -p di scaffold-backend.txt
+      - ./deployments/redis/data:/data
+    networks:
+      - rinzi-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispass}", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # =====================================================================================
+  # CONTAINER 3: MINIO (Penyimpanan Berkas/Media Gambar untuk Katalog Toko & Rental)
+  # =====================================================================================
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    container_name: bisnis-rinzi-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT_API:-9000}:9000" # Port API untuk Go Backend
+      - "${MINIO_PORT_CONSOLE:-9001}:9001" # Port Console Dashboard Web
+    volumes:
+      # Pemetaan path data sesuai dengan struktur mkdir -p di scaffold-backend.txt
+      - minio_permanent_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - rinzi-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  
+  # =====================================================================================
+  # CONTAINER 4: NGINX (Reverse Proxy, Load Balancer & Gateway Utama)
+  # =====================================================================================
+  # nginx:
+  #   image: nginx:1.31-alpine
+  #   container_name: bisnis-rinzi-nginx
+  #   restart: always
+  #   ports:
+  #     - "${HTTP_PORT:-80}:80"
+  #     - "${HTTPS_PORT:-443}:443"
+  #   volumes:
+  #     # Konfigurasi utama Nginx
+  #     - ./deployments/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./deployments/nginx/conf.d:/etc/nginx/conf.d:ro
+  #     # Direktori untuk sertifikat SSL (jika nanti menggunakan HTTPS/Certbot)
+  #     - ./deployments/nginx/certs:/etc/nginx/certs:ro
+  #     # Tempat menyimpan logs eksternal agar mudah dianalisis
+  #     - ./deployments/nginx/logs:/var/log/nginx
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   networks:
+  #     - rinzi-network
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+
+  # =====================================================================================
+  # CONTAINER 4: PLANTUML SERVER (Generate Diagram UML)
+  # =====================================================================================
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: bisnis-rinzi-plantuml
+    restart: always
+    ports:
+      - "8090:8080" # Host 8081 -> Container 8080
+    networks:
+      - rinzi-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  rinzi-network:
+    driver: bridge
+
+volumes:
+  minio_permanent_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${PWD}/deployments/minio/data'
+
+

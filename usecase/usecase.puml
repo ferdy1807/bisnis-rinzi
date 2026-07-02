@@ -1,0 +1,66 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Kasir Toko" as Kasir
+actor "Staf Rental" as StafRental
+actor "Administrator" as Admin
+
+package "Sistem Bisnis Rinzi" {
+
+  package "Portal Toko (POS)" {
+    usecase "Kelola Master Produk\n(Produk, Kategori, Brand, Unit)" as UC_Toko_Master
+    usecase "Transaksi Kasir (POS)" as UC_Toko_POS
+    usecase "Kelola Shift & Laporan Shift" as UC_Toko_Shift
+    usecase "Kelola Kas Masuk & Keluar" as UC_Toko_Kas
+    usecase "Lihat Laporan Harian &\nRiwayat Transaksi" as UC_Toko_Laporan
+    usecase "Pantau Pergerakan Stok" as UC_Toko_Stok
+  }
+
+  package "Portal Sewa (Rental)" {
+    usecase "Lihat Katalog & Kalender Ketersediaan" as UC_Sewa_Katalog
+    usecase "Buat & Kelola Reservasi" as UC_Sewa_Reservasi
+    usecase "Pantau Jadwal Akan Datang (Upcoming)" as UC_Sewa_Upcoming
+    usecase "Kelola Pengembalian & Barang Diterima" as UC_Sewa_Pengembalian
+    usecase "Kelola Keterlambatan (Overdue)" as UC_Sewa_Overdue
+  }
+
+  package "Admin Dashboard" {
+    usecase "Lihat Analytics & Dashboard Global" as UC_Admin_Analytics
+    usecase "Kelola Pengguna (User Management)" as UC_Admin_User
+    usecase "Kelola Master Akuntansi\n(COA, Periode)" as UC_Admin_Akuntansi
+    usecase "Kelola Pemasukan &\nPengeluaran Internal" as UC_Admin_Keuangan
+    usecase "Laporan Keuangan & Audit Closing" as UC_Admin_LaporanKeu
+    usecase "Kelola Master Katalog Rental" as UC_Admin_Katalog
+    usecase "Pantau Transaksi Rental Global\n(Deposit & Reversal)" as UC_Admin_RentalGlobal
+    usecase "Audit Pengembalian Berdenda /\nKerusakan Rental (Damages)" as UC_Admin_RentalDamages
+    usecase "Pantau Riwayat Penjualan & HPP Global" as UC_Admin_SalesGlobal
+    usecase "Kelola Penyesuaian Stok Global\n(Adjusment & Movement)" as UC_Admin_StokGlobal
+  }
+}
+
+Kasir --> UC_Toko_Master
+Kasir --> UC_Toko_POS
+Kasir --> UC_Toko_Shift
+Kasir --> UC_Toko_Kas
+Kasir --> UC_Toko_Laporan
+Kasir --> UC_Toko_Stok
+
+StafRental --> UC_Sewa_Katalog
+StafRental --> UC_Sewa_Reservasi
+StafRental --> UC_Sewa_Upcoming
+StafRental --> UC_Sewa_Pengembalian
+StafRental --> UC_Sewa_Overdue
+
+Admin --> UC_Admin_Analytics
+Admin --> UC_Admin_User
+Admin --> UC_Admin_Akuntansi
+Admin --> UC_Admin_Keuangan
+Admin --> UC_Admin_LaporanKeu
+Admin --> UC_Admin_Katalog
+Admin --> UC_Admin_RentalGlobal
+Admin --> UC_Admin_RentalDamages
+Admin --> UC_Admin_SalesGlobal
+Admin --> UC_Admin_StokGlobal
+
+@enduml

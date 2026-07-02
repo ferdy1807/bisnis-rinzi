@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Logs
+*.log
+
+# Database volumes
+deployments/postgres/data/**
+deployments/redis/data/**
+deployments/minio/data/**
+
+# IDE
+.vscode/
+.idea/
+
+# Go
+bin/
+dist/
+tmp/
+
+#FE
+node_modules/
+**/node_modules/
