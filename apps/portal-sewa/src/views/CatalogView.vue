@@ -21,8 +21,7 @@
     </div>
 
     <div
-      class="bg-[#d9e2ff]/50 border border-[#d9e2ff] p-5 rounded-3xl flex items-center gap-4 text-[#001944]"
-    >
+      class="bg-[#d9e2ff]/50 border border-[#d9e2ff] p-5 rounded-3xl flex items-center gap-4 text-[#001944]">
       <span class="p-3.5 bg-[#254582] text-white rounded-2xl shadow-xs"
         ><i class="pi pi-lock text-xl"></i
       ></span>
@@ -64,11 +63,25 @@
         :key="prod.id"
         class="bg-white border border-[#c4c6d1]/60 rounded-3xl overflow-hidden hover:-translate-y-1.5 hover:shadow-xl hover:border-[#254582] transition-all duration-300 flex flex-col group shadow-2xs"
       >
-        <div class="h-48 bg-[#f3f3f9] relative flex items-center justify-center overflow-hidden">
+        <div class="h-48 bg-[#f3f3f9] relative flex items-center justify-center overflow-hidden group">
+          <img
+            v-if="prod.object_name"
+            :src="`http://localhost:9000/foto-produk-sewa/${prod.object_name}`"
+            :alt="prod.name"
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 absolute inset-0 z-0"
+            @error="handleImageError"
+          />
+          <img
+            v-else
+            src=""
+            :alt="prod.name"
+            class="hidden"
+            @error="handleImageError"
+          />
           <i
-            class="pi pi-image text-4xl text-[#c4c6d1] group-hover:scale-110 transition-transform duration-500"
+            class="pi pi-image text-4xl text-[#c4c6d1] group-hover:scale-110 transition-transform duration-500 hidden relative z-10"
           ></i>
-          <div class="absolute top-3 right-3">
+          <div class="absolute top-3 right-3 z-20">
             <span
               class="px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-xs inline-block"
               :class="
@@ -142,6 +155,16 @@ const formatCurrency = (val: number) =>
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(val)
+
+const handleImageError = (e: Event) => {
+  const target = e.target as HTMLElement
+  if (target) {
+    target.style.display = 'none'
+    if (target.nextElementSibling) {
+      (target.nextElementSibling as HTMLElement).style.display = 'block'
+    }
+  }
+}
 
 onMounted(() => {
   loadProducts()

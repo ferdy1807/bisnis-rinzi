@@ -354,9 +354,10 @@ func (r *pgRentalRepository) UpdateProductPhoto(ctx context.Context, id string, 
 }
 
 func (r *pgRentalRepository) FindAllReservations(ctx context.Context) ([]*entity.Reservation, error) {
-	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by 
+	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by, COALESCE(r.down_payment + COALESCE(ret.remaining_payment, 0) + COALESCE(ret.total_late_fees, 0) + COALESCE(ret.total_damage_fees, 0), r.down_payment) as grand_total_income
 	          FROM rental_reservations r
 			  LEFT JOIN customer_snapshots c ON r.customer_snapshot_id = c.id 
+			  LEFT JOIN rental_returns ret ON ret.rental_reservation_id = r.id
 			  ORDER BY r.created_at DESC`
 	return r.fetchReservations(ctx, query)
 }
@@ -496,27 +497,30 @@ func (r *pgRentalRepository) DeleteProduct(ctx context.Context, id string) error
 }
 
 func (r *pgRentalRepository) FindActiveReservations(ctx context.Context) ([]*entity.Reservation, error) {
-	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by 
+	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by, COALESCE(r.down_payment + COALESCE(ret.remaining_payment, 0) + COALESCE(ret.total_late_fees, 0) + COALESCE(ret.total_damage_fees, 0), r.down_payment) as grand_total_income
 	          FROM rental_reservations r
 			  LEFT JOIN customer_snapshots c ON r.customer_snapshot_id = c.id 
+			  LEFT JOIN rental_returns ret ON ret.rental_reservation_id = r.id
 	          WHERE r.status IN ('BOOKED', 'READY_FOR_PICKUP', 'PICKED_UP') 
 	          ORDER BY r.start_date ASC`
 	return r.fetchReservations(ctx, query)
 }
 
 func (r *pgRentalRepository) FindUpcomingReservations(ctx context.Context) ([]*entity.Reservation, error) {
-	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by 
+	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by, COALESCE(r.down_payment + COALESCE(ret.remaining_payment, 0) + COALESCE(ret.total_late_fees, 0) + COALESCE(ret.total_damage_fees, 0), r.down_payment) as grand_total_income
 	          FROM rental_reservations r
 			  LEFT JOIN customer_snapshots c ON r.customer_snapshot_id = c.id 
+			  LEFT JOIN rental_returns ret ON ret.rental_reservation_id = r.id
 	          WHERE r.status IN ('BOOKED', 'READY_FOR_PICKUP') AND DATE(r.start_date) >= CURRENT_DATE
 	          ORDER BY r.start_date ASC`
 	return r.fetchReservations(ctx, query)
 }
 
 func (r *pgRentalRepository) FindOverdueReservations(ctx context.Context) ([]*entity.Reservation, error) {
-	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by 
+	query := `SELECT r.id, r.invoice_number, COALESCE(c.customer_name, 'Tanpa Nama') || ' (' || COALESCE(c.customer_phone, '-') || ')', r.transaction_date, r.start_date, r.end_date, r.event_date, r.subtotal, r.down_payment, r.amount_paid, r.change_amount, r.total_amount, r.status, r.picked_up_by, r.picked_up_at, r.cashier_session_id, r.created_by, COALESCE(r.down_payment + COALESCE(ret.remaining_payment, 0) + COALESCE(ret.total_late_fees, 0) + COALESCE(ret.total_damage_fees, 0), r.down_payment) as grand_total_income
 	          FROM rental_reservations r
 			  LEFT JOIN customer_snapshots c ON r.customer_snapshot_id = c.id 
+			  LEFT JOIN rental_returns ret ON ret.rental_reservation_id = r.id
 	          WHERE r.status = 'PICKED_UP' AND r.end_date < $1 
 	          ORDER BY r.end_date ASC`
 	return r.fetchReservationsArgs(ctx, query, time.Now())
@@ -633,7 +637,7 @@ func scanReservationsFull(rows pgx.Rows) ([]*entity.Reservation, error) {
 	var list []*entity.Reservation
 	for rows.Next() {
 		var res entity.Reservation
-		err := rows.Scan(&res.ID, &res.InvoiceNumber, &res.CustomerSnapshotID, &res.TransactionDate, &res.StartDate, &res.EndDate, &res.EventDate, &res.Subtotal, &res.DownPayment, &res.AmountPaid, &res.ChangeAmount, &res.TotalAmount, &res.Status, &res.PickedUpBy, &res.PickedUpAt, &res.CashierSessionID, &res.CreatedBy)
+		err := rows.Scan(&res.ID, &res.InvoiceNumber, &res.CustomerSnapshotID, &res.TransactionDate, &res.StartDate, &res.EndDate, &res.EventDate, &res.Subtotal, &res.DownPayment, &res.AmountPaid, &res.ChangeAmount, &res.TotalAmount, &res.Status, &res.PickedUpBy, &res.PickedUpAt, &res.CashierSessionID, &res.CreatedBy, &res.GrandTotalIncome)
 		if err != nil {
 			return nil, err
 		}

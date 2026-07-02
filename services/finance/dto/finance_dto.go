@@ -73,13 +73,15 @@ type BalanceSheetResponse struct {
 }
 
 type IncomeStatementResponse struct {
-	PeriodName   string             `json:"period_name"`
-	TotalRevenue float64            `json:"total_revenue"`
-	TotalCOGS    float64            `json:"total_cogs"`
-	GrossProfit  float64            `json:"gross_profit"`
-	TotalExpense float64            `json:"total_expense"`
-	NetIncome    float64            `json:"net_income"`
-	Items        map[string]float64 `json:"items"`
+	PeriodName    string             `json:"period_name"`
+	RetailRevenue float64            `json:"retail_revenue"`
+	RentalRevenue float64            `json:"rental_revenue"`
+	TotalRevenue  float64            `json:"total_revenue"`
+	TotalCOGS     float64            `json:"total_cogs"`
+	GrossProfit   float64            `json:"gross_profit"`
+	TotalExpense  float64            `json:"total_expense"`
+	NetIncome     float64            `json:"net_income"`
+	Items         map[string]float64 `json:"items"`
 }
 
 type JournalIncomingRequest struct {

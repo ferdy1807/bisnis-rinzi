@@ -36,6 +36,7 @@ type Reservation struct {
 	CreatedBy          string             `json:"created_by"`
 	CreatedAt          time.Time          `json:"created_at"`
 	UpdatedAt          time.Time          `json:"updated_at"`
+	GrandTotalIncome   float64            `json:"grand_total_income"`
 	Items              []*ReservationItem  `json:"items,omitempty"`
 	Contents           []*ReservationContent `json:"contents,omitempty"`
 }

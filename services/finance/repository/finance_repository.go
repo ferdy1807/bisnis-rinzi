@@ -127,7 +127,7 @@ func NewFinanceRepository(db *postgres.DBClient) FinanceRepository {
 		CREATE OR REPLACE VIEW live_daily_closings AS
 		SELECT 
 			cs.id, 
-			COALESCE(cs.close_time, CURRENT_TIMESTAMP) as closing_date, 
+			cs.close_time as closing_date, 
 			(SELECT COALESCE(SUM(si.subtotal), 0) FROM sale_items si JOIN sales s ON si.sale_id = s.id WHERE s.cashier_session_id = cs.id) as total_sales_retail, 
 			(
 				(SELECT COALESCE(SUM(down_payment), 0) FROM rental_reservations rr WHERE rr.cashier_session_id = cs.id) + 
@@ -140,7 +140,7 @@ func NewFinanceRepository(db *postgres.DBClient) FinanceRepository {
 			cs.opening_cash as opening_cash,
 			false as is_reconciled
 		FROM cashier_sessions cs
-		WHERE cs.status IN ('OPEN', 'CLOSED');
+		WHERE cs.status = 'CLOSED';
 	`
 	_, err := db.Pool.Exec(context.Background(), fdwQuery)
 	if err != nil {
@@ -665,34 +665,53 @@ func (r *pgFinanceRepository) GetDashboardMetrics(ctx context.Context) (map[stri
 	var dailyRevenue float64
 	var monthlyRevenue float64
 	var totalHpp float64
-
-	// 1. Gross Retail Sales (Real-time dari sale_items)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(subtotal), 0) FROM sale_items`).Scan(&grossRetailSales)
-
-	// 2. Rental Gross Income (Real-time dari rental_reservations + rental_returns)
-	var rentalReservationsTotal, rentalReturnsTotal float64
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(down_payment), 0) FROM rental_reservations`).Scan(&rentalReservationsTotal)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(remaining_payment), 0) FROM rental_returns`).Scan(&rentalReturnsTotal)
-	rentalGrossIncome = rentalReservationsTotal + rentalReturnsTotal
-
-	// 3. Pendapatan Hari Ini (Daily Revenue) = Retail + Rental hari ini
-	var dailyRetail, dailyRentalRes, dailyRentalRet float64
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(si.subtotal), 0) FROM sale_items si JOIN sales s ON si.sale_id = s.id WHERE DATE(s.transaction_date) = CURRENT_DATE`).Scan(&dailyRetail)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(down_payment), 0) FROM rental_reservations WHERE DATE(created_at) = CURRENT_DATE`).Scan(&dailyRentalRes)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(remaining_payment), 0) FROM rental_returns WHERE DATE(return_date) = CURRENT_DATE`).Scan(&dailyRentalRet)
-	dailyRevenue = dailyRetail + dailyRentalRes + dailyRentalRet
-
-	// 4. Pendapatan Bulan Ini (Monthly Revenue) = Retail + Rental bulan ini
-	var monthlyRetail, monthlyRentalRes, monthlyRentalRet float64
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(si.subtotal), 0) FROM sale_items si JOIN sales s ON si.sale_id = s.id WHERE EXTRACT(MONTH FROM s.transaction_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM s.transaction_date) = EXTRACT(YEAR FROM CURRENT_DATE)`).Scan(&monthlyRetail)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(down_payment), 0) FROM rental_reservations WHERE EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE)`).Scan(&monthlyRentalRes)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(remaining_payment), 0) FROM rental_returns WHERE EXTRACT(MONTH FROM return_date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM return_date) = EXTRACT(YEAR FROM CURRENT_DATE)`).Scan(&monthlyRentalRet)
-	monthlyRevenue = monthlyRetail + monthlyRentalRes + monthlyRentalRet
-
-	// 5. Total HPP & Expenses
 	var totalExpenses float64
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(total_hpp), 0) FROM finance_monthly_analytics`).Scan(&totalHpp)
-	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(total_expenses), 0) FROM finance_monthly_analytics`).Scan(&totalExpenses)
+
+	// 1. Gross Retail Sales (Dari Jurnal Penjualan: 410000)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code = '410000'
+	`).Scan(&grossRetailSales)
+
+	// 2. Rental Gross Income (Dari Jurnal Sewa: 420000 dan Denda Sewa: 421000)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code IN ('420000', '421000')
+	`).Scan(&rentalGrossIncome)
+
+	// 3. Pendapatan Hari Ini (Daily Revenue) = Total Kredit - Debit dari akun 410000, 420000, 421000 hari ini
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code IN ('410000', '420000', '421000') 
+		  AND DATE(jed.created_at) = CURRENT_DATE
+	`).Scan(&dailyRevenue)
+
+	// 4. Pendapatan Bulan Ini (Monthly Revenue) = Total Kredit - Debit dari akun pendapatan bulan ini
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code IN ('410000', '420000', '421000') 
+		  AND EXTRACT(MONTH FROM jed.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) 
+		  AND EXTRACT(YEAR FROM jed.created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+	`).Scan(&monthlyRevenue)
+
+	// 5. Total HPP (Fallback sementara ke sale_items krn worker blm menjurnal HPP 510000 saat transaksi ritel)
+	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(cost_price * qty), 0) FROM sale_items`).Scan(&totalHpp)
+
+	// Total Expenses (Dari Jurnal Beban Operasional)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.debit_amount - jed.credit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code IN ('711000', '720000', '750000', '810000')
+	`).Scan(&totalExpenses)
 
 	// 6. Gross Profit & Net Income
 	grossProfit := (grossRetailSales + rentalGrossIncome) - totalHpp
@@ -710,16 +729,57 @@ func (r *pgFinanceRepository) GetDashboardMetrics(ctx context.Context) (map[stri
 	}, nil
 }
 
-func (r *pgFinanceRepository) GetTotalMonthlyAnalytics(ctx context.Context) (float64, float64, float64, error) {
-	// Paksakan sinkronisasi real-time agar laporan selalu akurat saat diakses
-	_ = r.RefreshDailyClosings(ctx)
-	_ = r.RefreshMonthlyAnalytics(ctx)
+func (r *pgFinanceRepository) GetTotalMonthlyAnalytics(ctx context.Context) (map[string]float64, error) {
+	var retailRev, rentalRev, otherIncome float64
+	var hpp, exp float64
 
-	var rev, hpp, exp, penalties float64
-	query := `SELECT COALESCE(SUM(total_revenue), 0), COALESCE(SUM(total_hpp), 0), COALESCE(SUM(total_expenses), 0), COALESCE(SUM(total_rental_penalties), 0) FROM finance_monthly_analytics`
-	err := r.db.Pool.QueryRow(ctx, query).Scan(&rev, &hpp, &exp, &penalties)
-	// rev sudah mencakup penalties karena live_daily_closings mengambil remaining_payment yang utuh
-	return rev, hpp, exp, err
+	// Query Retail Revenue from Ledger (Credit Normal Balance)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code = '410000'
+	`).Scan(&retailRev)
+
+	// Query Rental Revenue from Ledger (Credit Normal Balance)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code = '420000'
+	`).Scan(&rentalRev)
+
+	// Query Other Income / Denda from Ledger (Credit Normal Balance)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.credit_amount - jed.debit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code = '421000'
+	`).Scan(&otherIncome)
+
+	// HPP (COGS) - Temporary fallback to sale_items since it's not fully journaled by worker yet
+	_ = r.db.Pool.QueryRow(ctx, `SELECT COALESCE(SUM(cost_price * qty), 0) FROM sale_items`).Scan(&hpp)
+
+	// Query Expenses from Ledger (Debit Normal Balance)
+	_ = r.db.Pool.QueryRow(ctx, `
+		SELECT COALESCE(SUM(jed.debit_amount - jed.credit_amount), 0)
+		FROM journal_entry_details jed
+		JOIN chart_of_accounts coa ON jed.account_id = coa.id
+		WHERE coa.account_code IN ('711000', '720000', '750000', '810000')
+	`).Scan(&exp)
+
+	rev := retailRev + rentalRev + otherIncome
+
+	metrics := map[string]float64{
+		"retail_revenue": retailRev,
+		"rental_revenue": rentalRev,
+		"other_income":   otherIncome,
+		"total_revenue":  rev,
+		"total_hpp":      hpp,
+		"total_expenses": exp,
+	}
+
+	return metrics, nil
 }
 
 func (r *pgFinanceRepository) GetMonthlyRevenueTrend(ctx context.Context, year int) ([]map[string]interface{}, error) {

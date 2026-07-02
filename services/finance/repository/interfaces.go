@@ -58,10 +58,10 @@ type FinanceRepository interface {
 
 	// Engine Report Generator
 	GetLedgerLines(ctx context.Context, accountID string, start, end time.Time) ([]dto.LedgerReportLine, error)
-	
+
 	// Analytics
 	GetDashboardMetrics(ctx context.Context) (map[string]interface{}, error)
-	GetTotalMonthlyAnalytics(ctx context.Context) (float64, float64, float64, error)
+	GetTotalMonthlyAnalytics(ctx context.Context) (map[string]float64, error)
 	GetMonthlyRevenueTrend(ctx context.Context, year int) ([]map[string]interface{}, error)
 	GetSalesAnalytics(ctx context.Context, start, end time.Time) ([]entity.SalesAnalytics, error)
 	GetRentalAnalytics(ctx context.Context, start, end time.Time) ([]entity.RentalAnalytics, error)

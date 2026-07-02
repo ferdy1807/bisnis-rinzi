@@ -24,6 +24,7 @@ export interface RentalReservation {
     end_date: string;
     subtotal: number;
     down_payment: number;
+    grand_total_income: number;
     amount_paid: number;
     change_amount: number;
     total_amount: number;

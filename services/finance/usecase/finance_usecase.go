@@ -348,10 +348,17 @@ func (u *financeUseCase) RecordAutoJournalSystem(ctx context.Context, sourceModu
 }
 
 func (u *financeUseCase) GenerateIncomeStatement(ctx context.Context) (*dto.IncomeStatementResponse, error) {
-	rev, hpp, exp, _ := u.financeRepo.GetTotalMonthlyAnalytics(ctx)
+	metrics, _ := u.financeRepo.GetTotalMonthlyAnalytics(ctx)
+
+	retailRev := metrics["retail_revenue"]
+	rentalRev := metrics["rental_revenue"]
+	rev := metrics["total_revenue"]
+	hpp := metrics["total_hpp"]
+	exp := metrics["total_expenses"]
 
 	items := map[string]float64{
-		"Pendapatan Ritel & Sewa": rev,
+		"Pendapatan Ritel":        retailRev,
+		"Pendapatan Sewa":         rentalRev,
 		"Harga Pokok Penjualan":   hpp,
 		"Beban Operasional":       exp,
 	}
@@ -360,13 +367,15 @@ func (u *financeUseCase) GenerateIncomeStatement(ctx context.Context) (*dto.Inco
 	netIncome := grossProfit - exp
 
 	return &dto.IncomeStatementResponse{
-		PeriodName:   "Periode Berjalan Terkonsolidasi",
-		TotalRevenue: rev,
-		TotalCOGS:    hpp,
-		GrossProfit:  grossProfit,
-		TotalExpense: exp,
-		NetIncome:    netIncome,
-		Items:        items,
+		PeriodName:    "Periode Berjalan Terkonsolidasi",
+		RetailRevenue: retailRev,
+		RentalRevenue: rentalRev,
+		TotalRevenue:  rev,
+		TotalCOGS:     hpp,
+		GrossProfit:   grossProfit,
+		TotalExpense:  exp,
+		NetIncome:     netIncome,
+		Items:         items,
 	}, nil
 }
 
